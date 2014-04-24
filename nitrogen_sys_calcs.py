@@ -1,18 +1,27 @@
-# This document will contain the calculations for the Refrigerator system using LN2.
+# This document contains 1-D calculations for the Refrigerator system using LN2.
 
 
 import CoolProp
 import CoolProp.CoolProp as CP
+import numpy as np
+from scipy.optimize import fixed_point
+
+#Physical Parameters
+
+D =.0254 	#meter, Hydraulic diameter of 1.0" pipe/hose
+epsilon_pipe = 0.0001		# meter, surface roughness of piping
+epsilon_hose = 0.00635		# meter, referenced from Swagelok convoluted flex hoses
 
 
-# Defined Heat Loads
-Q_camera = 540 		# watts, total camera power consumption, including contingency for heaters
-T_operation = 100 	# degrees K, (-135 deg C)
+#Flow Parameters
 
+m_dot = 0.400		# kg/second, NEEDS TO BE OPTIMIZED
+
+T_operation = 100 	# degree K, (-135 deg C)
 X_max = 0.01		# Max allowable quality NEEDS TO BE VERIFIED BY EXPERIENCE OF DECAM
 
-
-#Derived Heat Loads
+# Heat Loads
+Q_camera = 540 		# watt, total camera power consumption, including contingency for heaters
 
 L_pipe = 80			# Meters of vacuum insulated hose
 L_hose = 30 		# Meters of vacuum insulated hose
@@ -24,8 +33,8 @@ loss_hose = .9		# W/m, estimate
 Q_pipes =  loss_pipe*L_pipe
 Q_hose =  loss_hose*L_hose
 
-Q_valves = 25		# watts, Heat leak from valves throughout the system. Equal to value from DECAM
-Q_pump = 150		# watts, 3X value from DECAM, assumes that we might need tripple the flow.
+Q_valves = 25		# watt, Heat leak from valves throughout the system. Equal to value from DECAM
+Q_pump = 150		# watt, 3X value from DECAM, assumes that we might need tripple the flow.
 
 
 
@@ -37,19 +46,55 @@ print "Q_net = ", '%.1f' % Q_net
 cam_height = 18.6	# meters, height difference from the utility room to the camera high spot
 g = 9.81 			# m/s^2, gravity
 
-#Density of Nitrogen at 100K as a liquid.
-rho = CP.Props('D','T', T_operation, 'Q', 0,"Nitrogen") 
+	#Density of Nitrogen at 100K as a liquid.
+rho = CP.Props('D','T', T_operation, 'Q', 0,"Nitrogen")
 
 dP_head = rho*g*cam_height/1000	# kPa, static pressure head from util room to camera
 
 
+# Flow characeristics of system
+A_flow = np.pi*D**2/4
+
+	# Mean velocity of flow in the system
+U_mean = m_dot/(A_flow*rho)	# m/s
+
+	#Dynamic viscosity of saturated LN2 @ T_op
+mu  = CP.Props('V','T', T_operation, 'Q', 0,"Nitrogen") # Pa-s
 
 
+Re =  rho*U_mean*D/mu
 
-# dP_flow_hose   = 
-# dP_flow_smooth = 
+	#Friction factor solver for internal flows
 
-print "dP_head = " '%.1f' % dP_head
+# Solving for friction factor for next Darcy Weisbach
+def friction(Re,epsilon,diam):			
+	def friction_funct(friction, Re, epsilon, diam):
+
+		LHS = - 2.*np.log10(epsilon/(3.7*diam)+ 2.51/(Re*np.sqrt(friction)))
+		return 1/LHS**2
+
+	return fixed_point(friction_funct, 0.2, args=(Re,epsilon,diam))
+
+
+# Solver for friction factor for arbitrary Reynolds number
+def DarcyWeisbach(Re,epsilon,diam):
+	if Re < 2100:
+		friction_laminar = 64/Re
+		return friction_laminar
+	else:
+		return friction(Re,epsilon,diam)
+
+friction_pipe = DarcyWeisbach(Re,epsilon_pipe,D)
+friction_hose = DarcyWeisbach(Re,epsilon_hose,D)
+
+dP_flow_pipe = friction_pipe*L_pipe/D*rho*U_mean**2/2
+dP_flow_hose = friction_hose*L_hose/D*rho*U_mean**2/2
+print"Pressure drop from pipes is %.f" % dP_flow_pipe, " Pa"
+print"Pressure drop from hoses is %.f" % dP_flow_hose, " Pa"
+
+dP_pump = dP_flow_pipe+dP_flow_hose
+print "Total flow pressure drop is %.f" % dP_pump, " Pa"
+
 
 
 
