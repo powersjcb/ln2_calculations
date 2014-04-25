@@ -17,7 +17,7 @@ epsilon_hose = 0.00635		# meter, referenced from Swagelok convoluted flex hoses
 
 m_dot = 0.400		# kg/second, NEEDS TO BE OPTIMIZED
 
-T_operation = 100 	# degree K, (-135 deg C)
+T_operation = 90 	# degree K, (-135 deg C)
 X_max = 0.01		# Max allowable quality NEEDS TO BE VERIFIED BY EXPERIENCE OF DECAM
 
 # Heat Loads
@@ -50,7 +50,7 @@ g = 9.81 			# m/s^2, gravity
 rho = CP.Props('D','T', T_operation, 'Q', 0,"Nitrogen")
 
 dP_head = rho*g*cam_height/1000	# kPa, static pressure head from util room to camera
-
+print "Pressure drop from height of cam", dP_head
 
 # Flow characeristics of system
 A_flow = np.pi*D**2/4
@@ -67,7 +67,8 @@ Re =  rho*U_mean*D/mu
 	#Friction factor solver for internal flows
 
 # Solving for friction factor for next Darcy Weisbach
-def friction(Re,epsilon,diam):			
+def friction(Re,epsilon,diam):
+	from scipy.optimize import fixed_point			
 	def friction_funct(friction, Re, epsilon, diam):
 
 		LHS = - 2.*np.log10(epsilon/(3.7*diam)+ 2.51/(Re*np.sqrt(friction)))
@@ -87,6 +88,8 @@ def DarcyWeisbach(Re,epsilon,diam):
 friction_pipe = DarcyWeisbach(Re,epsilon_pipe,D)
 friction_hose = DarcyWeisbach(Re,epsilon_hose,D)
 
+print friction_pipe
+
 dP_flow_pipe = friction_pipe*L_pipe/D*rho*U_mean**2/2
 dP_flow_hose = friction_hose*L_hose/D*rho*U_mean**2/2
 print"Pressure drop from pipes is %.f" % dP_flow_pipe, " Pa"
@@ -96,5 +99,14 @@ dP_pump = dP_flow_pipe+dP_flow_hose
 print "Total flow pressure drop is %.f" % dP_pump, " Pa"
 
 
+delta_height = 7.9		#meter, change in ht of camera
+dP_head = rho*g*delta_height/1000	# kPa, static pressure head from util room to camera
+
+p_top= CP.Props('P','T', T_operation, 'Q', 0,"Nitrogen") # Pa-s
+print "Operating pressure", p_top
+dT_movement = CP.Props('T','P', p_top, 'Q', 0,"Nitrogen")-CP.Props('T','P', (p_top-dP_head), 'Q', 0,"Nitrogen")  # Pa-s
 
 
+
+print "dP movement", dP_head
+print "Temperature shift from movement, degrees K", dT_movement
