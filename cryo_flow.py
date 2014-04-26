@@ -92,7 +92,7 @@ def flowLN(args):
 	# print T_in, "T_in"
 	# print T_isenthalpic, "T_isenthalpic"
 
-	H_out = H_isenthalpic + Q_net/(m_dot)	#outlet enthalpy, J/kg. 
+	H_out = H_isenthalpic + Q_net/(m_dot)/1000	#outlet enthalpy, kJ/kg. 
 
 
 	X_out = CP.Props('Q','P',P_out, 'H', H_out,"Nitrogen") # isobaric heating
@@ -100,13 +100,13 @@ def flowLN(args):
 
 
 
-# print Q_net, "Q_net"
-# print H
-# print H_isenthalpic, "Enthalpy isochoric"
-# print H_out, "Enthalpy out"
-# print X, "inlet quality"
-# print X_out, "outlet quality"
-# print T_out, "T_out"
+	# print Q_net, "Q_net"
+	# print H
+	# print H_isenthalpic, "Enthalpy isochoric"
+	# print H_out, "Enthalpy out"
+	# print X, "inlet quality"
+	# print X_out, "outlet quality"
+	# print T_out, "T_out"
 
 
 
