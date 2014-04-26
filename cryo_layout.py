@@ -11,8 +11,8 @@ import matplotlib.pyplot as plt
 #Physical Parameters
 P_pump = 500				# kPa
 m_dot  = .4				# mass flow rate, DECAM
-X_0    = 0.0 				# Initial quality, pure liquid
-D =.0254 	#meter, Hydraulic diameter of 1.0" pipe/hose
+X_0    = 0.00 				# Initial quality, pure liquid
+D =.030 	#meter, Hydraulic diameter of 1.0" pipe/hose
 epsilon_pipe = 0.0001		# meter, surface roughness of piping
 epsilon_hose = 0.00635		# meter, referenced from Swagelok convoluted flex hoses
 
@@ -61,7 +61,7 @@ heat_leak5 = 0.0
 #6 Zenith rotation axis flex lines, (z moves with altitude pointing, zenith has negligible effect)
 dzFlex3 = 0.0
 dxFlex3 = 4.25
-heat_leak6 = 1
+heat_leak6 = 0.0
 
 #7 Camera heat exchanger, (z moves with altitude pointing)
 camera_length = 4			#meter, length with tubing
@@ -70,13 +70,21 @@ dxRigid4 = camera_length
 heat_leak7 = 550
 
 # tabulating variables
-epsilon = [epsilon_pipe,epsilon_hose,epsilon_pipe,epsilon_hose,epsilon_pipe,epsilon_hose,epsilon_pipe]
+epsilon = [epsilon_pipe,epsilon_hose,epsilon_pipe,epsilon_hose,epsilon_pipe,epsilon_hose,epsilon_pipe,
+	epsilon_hose,epsilon_pipe,epsilon_hose,epsilon_pipe,epsilon_hose,epsilon_pipe]
 
-dX = [dxRigid1,dxFlex1,dxRigid2,dxFlex2,dxRigid3,dxFlex3,dxRigid4]
-dZ = [dzRigid1,dzFlex1,dzRigid2,dzFlex2,dzRigid3,dzFlex3,dxRigid4]
+dX = [dxRigid1,dxFlex1,dxRigid2,dxFlex2,dxRigid3,dxFlex3,dxRigid4,
+	dxFlex3,dxRigid3,dxFlex2,dxRigid2,dxFlex1,dxRigid1]
 
-loss = [pipe_loss,hose_loss,pipe_loss,hose_loss,pipe_loss,hose_loss,pipe_loss]
-heat_leak = [heat_leak1,heat_leak2,heat_leak3,heat_leak4,heat_leak5,heat_leak6,heat_leak7]
+
+dZ = [dzRigid1,dzFlex1,dzRigid2,dzFlex2,dzRigid3,dzFlex3,dzRigid4,
+	-dzFlex3,-dzRigid3,-dzFlex2,-dzRigid2,-dzFlex1,-dzRigid1]
+
+
+loss = [pipe_loss,hose_loss,pipe_loss,hose_loss,pipe_loss,hose_loss,pipe_loss,
+		hose_loss,pipe_loss,hose_loss,pipe_loss,hose_loss,pipe_loss]
+heat_leak = [heat_leak1,heat_leak2,heat_leak3,heat_leak4,heat_leak5,heat_leak6,heat_leak7,
+		heat_leak6,heat_leak5,heat_leak4,heat_leak3,heat_leak2,heat_leak1]
 
 
 print "epsilon", epsilon
@@ -86,8 +94,7 @@ print "loss", loss
 print "heat_leak", heat_leak
 
 
-
-for i in range(0,7):
+for i in range(0,12):
 	if i==0:
 		args = [P_pump, m_dot, X_0, D, epsilon[i], dX[i], dZ[i], loss[i], heat_leak[i]]
 	else:
@@ -103,15 +110,36 @@ for i in range(0,7):
 	T_in.append(Ti)
 	T_out.append(To)
 
-print i+1, "i"
+	# print i+1, "i"
 print P_out, "kPa"
 print X_out
 print T_in
 print T_out
 
-plt.plot(distance,X_out)
-plt.ylabel("X, Vapor Quality")
-plt.xlabel("Length of plumbing, meters")
+#plotting
+
+fig,ax1 = plt.subplots()
+
+ax2 = ax1.twinx()
+ax3 = ax1.twinx()
+ax3.set_frame_on(True)
+ax3.patch.set_visible(False)
+
+fig.subplots_adjust(right=0.75)
+
+ax1.plot(distance,X_out,color='Green')
+ax1.set_ylabel("X, Vapor Quality")
+ax1.set_xlabel("Length of plumbing, meters")
+
+
+ax2.plot(distance,P_out,color='Blue')
+ax2.set_ylabel("Pressure, kPa")
+
+
+ax3.plot(distance,T_out,color='Red')
+ax3.spines['right'].set_position(('axes', 1.2))
+ax3.set_ylabel("Temperature, Kelvin")
+plt.title("Flow characteristics with mass flow of %.2f kg/s" % m_dot)
 
 plt.show()
 
