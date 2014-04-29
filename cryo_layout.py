@@ -21,7 +21,7 @@ hose_loss = pipe_loss*2 	# watts/meter of 1" VJ hose
 
 
 # Segments of Cryogenics Plumbing
-theta = 0.			#radians, rotational anglual distance from horizon pointing
+theta = np.pi/2				#radians, rotational anglual distance from horizon pointing
 
 P_out = []
 X_out = []
@@ -29,7 +29,9 @@ Q_net = []
 T_in  = []
 T_out = []
 distance=[]
-d=0
+Alt =[]
+altitude = 0.
+d=0.
 
 #1 Utilities room to maypole, Fixed
 dzRigid1 = 0.
@@ -102,6 +104,8 @@ for i in range(0,12):
 
 	P,X,Q,Ti,To = flowLN(args)
 
+
+	altitude = altitude+dZ[i]
 	d = dX[i]+d
 	distance.append(d)
 	P_out.append(P)
@@ -109,12 +113,14 @@ for i in range(0,12):
 	Q_net.append(Q)
 	T_in.append(Ti)
 	T_out.append(To)
+	Alt.append(altitude)
 
 	# print i+1, "i"
 print P_out, "kPa"
 print X_out
 print T_in
 print T_out
+print Alt
 
 #plotting
 
@@ -122,23 +128,35 @@ fig,ax1 = plt.subplots()
 
 ax2 = ax1.twinx()
 ax3 = ax1.twinx()
+ax4 = ax1.twinx()
+
 ax3.set_frame_on(True)
 ax3.patch.set_visible(False)
 
-fig.subplots_adjust(right=0.75)
+ax4.set_frame_on(True)
+ax4.patch.set_visible(False)
+
+fig.subplots_adjust(right=.625)
 
 ax1.plot(distance,X_out,color='Green')
-ax1.set_ylabel("X, Vapor Quality")
+ax1.set_ylabel("X, Vapor Quality",color = "Green")
 ax1.set_xlabel("Length of plumbing, meters")
 
 
 ax2.plot(distance,P_out,color='Blue')
-ax2.set_ylabel("Pressure, kPa")
+ax2.set_ylabel("Pressure, kPa",color="Blue")
 
 
 ax3.plot(distance,T_out,color='Red')
 ax3.spines['right'].set_position(('axes', 1.2))
-ax3.set_ylabel("Temperature, Kelvin")
+ax3.set_ylabel("Temperature, Kelvin",color = "Red")
+
+plt.title("Flow characteristics with mass flow of %.2f kg/s" % m_dot)
+
+
+ax4.plot(distance,Alt,color='Orange')
+ax4.spines['right'].set_position(('axes', 1.4))
+ax4.set_ylabel("Altitude, meters",color="Orange")
 plt.title("Flow characteristics with mass flow of %.2f kg/s" % m_dot)
 
 plt.show()
