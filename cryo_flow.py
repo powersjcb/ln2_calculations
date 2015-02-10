@@ -77,7 +77,7 @@ def flowLN(args):
 
 	friction = DarcyWeisbach(Re,epsilon,D)		#Friction factor for tubes
 	P_head = rho*g*dZ/1000	# Pa, static pressure head from util room to camera
-	P_flow = friction*dX/D*rho*U_mean**2/1000
+	P_flow = friction*dX/(D*2)*rho*U_mean**2/1000
 	P_out = (P - P_flow - P_head)			#kPa
 
 
